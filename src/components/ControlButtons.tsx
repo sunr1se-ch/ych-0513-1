@@ -16,7 +16,7 @@ export const ControlButtons = ({ isGenerating }: ControlButtonsProps) => {
   const setSegment = useTrainingStore((state) => state.setSegment);
 
   const handleStart = async () => {
-    if (phase === 'idle') {
+    if (phase === 'idle' || phase === 'finished') {
       await startTraining();
     }
   };

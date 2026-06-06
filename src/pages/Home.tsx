@@ -16,6 +16,7 @@ export default function Home() {
   const setGeneratedAudioUrl = useTrainingStore((state) => state.setGeneratedAudioUrl);
   const loadBestRecord = useTrainingStore((state) => state.loadBestRecord);
   const phase = useTrainingStore((state) => state.phase);
+  const stats = useTrainingStore((state) => state.stats);
 
   const { audioUrl, isGenerating } = useGeneratedAudio(currentSegment);
 
@@ -124,7 +125,7 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {currentSegment.markers.map((marker, index) => {
-                    const result = useTrainingStore.getState().stats.results[index];
+                    const result = stats.results[index];
                     let statusColor = 'text-paper-white/40';
                     let statusText = '等待';
 
@@ -140,7 +141,7 @@ export default function Home() {
                         statusText = 'Miss';
                       }
                     } else if (
-                      index === useTrainingStore.getState().stats.results.length &&
+                      index === stats.results.length &&
                       phase === 'playing'
                     ) {
                       statusColor = 'text-gold-400 animate-pulse';

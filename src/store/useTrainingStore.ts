@@ -23,6 +23,7 @@ interface TrainingState {
   audioPlayer: AudioPlayer | null;
   trainingEngine: TrainingEngine | null;
   generatedAudioUrl: string | null;
+  countdownInterval: ReturnType<typeof setInterval> | null;
 
   setSegment: (segment: TrainingSegment) => void;
   setGeneratedAudioUrl: (url: string) => void;
@@ -78,12 +79,23 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   audioPlayer: null,
   trainingEngine: null,
   generatedAudioUrl: null,
+  countdownInterval: null,
 
   setSegment: (segment: TrainingSegment) => {
+    const { audioPlayer, countdownInterval } = get();
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
+    if (audioPlayer) {
+      audioPlayer.stop();
+    }
     set({
       currentSegment: segment,
       stats: createInitialStats(segment),
       generatedAudioUrl: null,
+      audioPlayer: null,
+      trainingEngine: null,
+      countdownInterval: null,
     });
     get().loadBestRecord();
   },
@@ -135,7 +147,11 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   },
 
   startTraining: async () => {
-    const { audioPlayer, trainingEngine, currentSegment } = get();
+    const { audioPlayer, trainingEngine, currentSegment, countdownInterval } = get();
+
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
 
     if (!audioPlayer || !trainingEngine) {
       await get().initAudio();
@@ -157,12 +173,13 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
     engine.reset();
 
-    const countdownInterval = setInterval(() => {
+    const newCountdownInterval = setInterval(() => {
       const { countdownMs } = get();
       const newCountdown = countdownMs - 100;
 
       if (newCountdown <= 0) {
-        clearInterval(countdownInterval);
+        clearInterval(newCountdownInterval);
+        set({ countdownInterval: null });
         player.play(0);
         set({
           phase: 'playing',
@@ -172,6 +189,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
         set({ countdownMs: newCountdown });
       }
     }, 100);
+
+    set({ countdownInterval: newCountdownInterval });
   },
 
   pauseTraining: () => {
@@ -222,7 +241,10 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   },
 
   resetTraining: () => {
-    const { audioPlayer, trainingEngine, currentSegment } = get();
+    const { audioPlayer, trainingEngine, currentSegment, countdownInterval } = get();
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
     if (audioPlayer) {
       audioPlayer.stop();
     }
@@ -237,6 +259,7 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       stats: createInitialStats(currentSegment),
       lastResult: null,
       isNewBestRecord: false,
+      countdownInterval: null,
     });
   },
 
